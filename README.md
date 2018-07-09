@@ -1,4 +1,5 @@
 # Diaspora-Venezuela
-RSiny App to map Venezuelan diaspora in the U.S.
+RSiny App of the Venezuelan diaspora in the U.S.
+Data source: visadoor.com
 App Link: https://prodriguezsosa.shinyapps.io/visadoor-app/
 
