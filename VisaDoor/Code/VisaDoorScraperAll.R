@@ -23,6 +23,19 @@ setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
 # define years of interest
 years <- seq(2008, 2018, 1)
 
+# scrape list of countries available
+countries <- read_html(url_base) %>% html_nodes("option") %>% html_attr('value')
+countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)]
+
+# check list of countries are the same every year
+#for(i in 2008:2018){
+#  url_base <- paste0("http://visadoor.com/greencards/index?company=&job=&country=&state=&year=",i,"&submit=Search")
+#  countries <- read_html(url_base) %>% html_nodes("option") %>% html_attr('value')
+#  countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)]
+#  print(length(countries))
+#}
+
+
 #######################
 # 
 # STEP 1: Description
