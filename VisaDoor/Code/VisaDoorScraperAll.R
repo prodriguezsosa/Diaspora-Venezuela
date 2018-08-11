@@ -39,24 +39,27 @@ years <- seq(2008, 2018, 1)
 # STEP 1: Code
 #
 #######################
-# specify base link
-# the year is pasted in between the two components that make up the url
-url_base_1 <- "http://visadoor.com/greencards/index?company=&job=&country=&state=&year="
-url_base_2 <- "&submit=Search"
-
-# create empty list to be filled with tables
-visa.table <- rep(list(NA), length(years))
-names(visa.table) <- years
+ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2018, 1)){
+  # specify base link
+  # the year is pasted in between the two components that make up the url
+  url_base_1 <- paste0("http://visadoor.com/greencards/index?company=&job=&country=", country, "&state=&year=")
+  url_base_2 <- "&submit=Search"
+  # create empty list to be filled with tables
+  visa.table <- rep(list(NA), length(years))
+  names(visa.table) <- years
   
-# create empty list to be filled with links
-visa.hlinks <- rep(list(NA), length(years))
-names(visa.hlinks) <- years
-
-# loop through years
-for(i in 1:length(years)){
-  url <- paste0(url_base_1, years[i], url_base_2)        # create url for respective year
-  visa.table[[i]] <- readHTMLTable(url, header=T, which=1, stringsAsFactors=F)  # scrape table
-  visa.hlinks[[i]] <- url %>% read_html() %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
+  # create empty list to be filled with links
+  visa.hlinks <- rep(list(NA), length(years))
+  names(visa.hlinks) <- years
+  
+  # loop through years
+  for(i in 1:length(years)){
+    url <- paste0(url_base_1, years[i], url_base_2)        # create url for respective year
+    visa.table[[i]] <- readHTMLTable(url, header=T, which=1, stringsAsFactors=F)  # scrape table
+    visa.table[[i]]$`Country of Origin` <- country 
+    visa.hlinks[[i]] <- url %>% read_html() %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
+  }
+  return(list(visa.table, visa.hlinks))
 }
 
 #######################
