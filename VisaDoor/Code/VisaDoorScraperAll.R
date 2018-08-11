@@ -78,10 +78,12 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
     visa.hlinks[[i]] <- page %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
     }
   }
-  return(list(visa.table, visa.hlinks))
+  output <- list(visa.table, visa.hlinks)
+  names(output) <- c("visa.table", "visa.hlinks")
+  return(output)
 }
 
-VisaDoorSummary <- pbapply(countries[1:2], function(x) ScrapeSummaryTables(country = x, years = years))
+VisaDoorSummary <- pblapply(countries[1:2], function(x) ScrapeSummaryTables(country = x, years = years))
 
 
 #######################
