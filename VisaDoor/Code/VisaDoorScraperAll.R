@@ -11,6 +11,7 @@ library(xlsx)
 library(dplyr)
 library(magrittr)
 library(tidyr)
+library(pbapply)
 
 # set folder
 setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
@@ -21,11 +22,12 @@ setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
 # Step 3: uses output from Step 2 (the output from Step 2 is saved such that Step 3 can be run independently once, 1 and 2 are run)
 
 # define years of interest
-years <- seq(2008, 2018, 1)
+years <- seq(2008, 2017, 1)
 
 # scrape list of countries available
-countries <- read_html(url_base) %>% html_nodes("option") %>% html_attr('value')
-countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)]
+url_base <- "http://visadoor.com/greencards/index?company=&job=&country=&state=&year=2008&submit=Search"
+countries <- read_html(url_base) %>% html_nodes("option") %>% html_attr('value') # scrape option menus
+countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)] # extract countries
 
 # check list of countries are the same every year
 #for(i in 2008:2018){
@@ -34,7 +36,6 @@ countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2
 #  countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)]
 #  print(length(countries))
 #}
-
 
 #######################
 # 
@@ -52,7 +53,7 @@ countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2
 # STEP 1: Code
 #
 #######################
-ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2018, 1)){
+ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2017, 1)){
   # specify base link
   # the year is pasted in between the two components that make up the url
   url_base_1 <- paste0("http://visadoor.com/greencards/index?company=&job=&country=", country, "&state=&year=")
@@ -68,12 +69,17 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2018, 1
   # loop through years
   for(i in 1:length(years)){
     url <- paste0(url_base_1, years[i], url_base_2)        # create url for respective year
+    page <- read_html(url_base) %>% html_nodes("table")
+    
     visa.table[[i]] <- readHTMLTable(url, header=T, which=1, stringsAsFactors=F)  # scrape table
     visa.table[[i]]$`Country of Origin` <- country 
     visa.hlinks[[i]] <- url %>% read_html() %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
   }
   return(list(visa.table, visa.hlinks))
 }
+
+VisaDoorSummary <- pbapply(countries[1:2], function(x) ScrapeSummaryTables(country = x, years = years))
+
 
 #######################
 # 
