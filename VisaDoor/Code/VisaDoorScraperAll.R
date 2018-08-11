@@ -12,6 +12,7 @@ library(dplyr)
 library(magrittr)
 library(tidyr)
 library(pbapply)
+library(htmltab)
 
 # set folder
 setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
@@ -53,7 +54,7 @@ countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2
 # STEP 1: Code
 #
 #######################
-ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2017, 1)){
+ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
   # specify base link
   # the year is pasted in between the two components that make up the url
   url_base_1 <- paste0("http://visadoor.com/greencards/index?company=&job=&country=", country, "&state=&year=")
@@ -68,12 +69,14 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = seq(2008, 2017, 1
   
   # loop through years
   for(i in 1:length(years)){
-    url <- paste0(url_base_1, years[i], url_base_2)        # create url for respective year
-    page <- read_html(url_base) %>% html_nodes("table")
-    
-    visa.table[[i]] <- readHTMLTable(url, header=T, which=1, stringsAsFactors=F)  # scrape table
-    visa.table[[i]]$`Country of Origin` <- country 
-    visa.hlinks[[i]] <- url %>% read_html() %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
+    url <- paste0(url_base_1, years[i], url_base_2)  # create url for respective year
+    page <- read_html(url)  # scrape html
+    table_check <- page %>% html_nodes("table") # is there are a table?
+    if(length(table_check) > 0){ # if TRUE
+    visa.table[[i]] <- page %>% html_table(header = TRUE, trim = TRUE) %>% .[[1]]  # scrape table
+    visa.table[[i]]$`Country of Origin` <- country # add country of origin
+    visa.hlinks[[i]] <- page %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
+    }
   }
   return(list(visa.table, visa.hlinks))
 }
