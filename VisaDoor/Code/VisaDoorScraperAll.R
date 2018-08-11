@@ -74,6 +74,7 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
     table_check <- page %>% html_nodes("table") # is there are a table?
     if(length(table_check) > 0){ # if TRUE
     visa.table[[i]] <- page %>% html_table(header = TRUE, trim = TRUE) %>% .[[1]]  # scrape table
+    visa.table[[i]]$Year <- years[i] # add country of origin
     visa.table[[i]]$`Country of Origin` <- country # add country of origin
     visa.hlinks[[i]] <- page %>% html_nodes("a") %>% html_attr('href') # scrape hyperlinks
     }
@@ -83,7 +84,9 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
   return(output)
 }
 
-VisaDoorSummary <- pblapply(countries[1:2], function(x) ScrapeSummaryTables(country = x, years = years))
+VisaDoorSummary <- pblapply(countries, function(x) ScrapeSummaryTables(country = x, years = years))
+visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .)
+rownames(visa.table) <- NULL
 
 
 #######################
