@@ -29,6 +29,7 @@ years <- seq(2008, 2017, 1)
 url_base <- "http://visadoor.com/greencards/index?company=&job=&country=&state=&year=2008&submit=Search"
 countries <- read_html(url_base) %>% html_nodes("option") %>% html_attr('value') # scrape option menus
 countries <- countries[(which(countries == "")[1] + 1):(which(countries == "")[2] - 1)] # extract countries
+countries <- str_replace_all(string = countries, pattern = " ", replacement = "+") # replace spaces with +
 
 # check list of countries are the same every year
 #for(i in 2008:2018){
@@ -84,10 +85,24 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
   return(output)
 }
 
+#start_time <- Sys.time()
+# loop format (good for debugging)
+#VisaDoorSummary <- list()
+#for(j in 1:length(countries)){
+#  VisaDoorSummary[[j]] <- ScrapeSummaryTables(country = countries[j], years = years)
+#}
+#Sys.time() - start_time
+
+# apply function to list of countries
 VisaDoorSummary <- pblapply(countries, function(x) ScrapeSummaryTables(country = x, years = years))
+
+# extract table
 visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .)
 rownames(visa.table) <- NULL
 
+# extract links
+visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .)
+rownames(visa.table) <- NULL
 
 #######################
 # 
