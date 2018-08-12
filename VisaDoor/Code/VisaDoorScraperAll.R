@@ -97,12 +97,11 @@ ScrapeSummaryTables <- function(country = "Venezuela", years = 2008){
 VisaDoorSummary <- pblapply(countries, function(x) ScrapeSummaryTables(country = x, years = years))
 
 # extract table
-visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .)
+visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .) %>% data.table
 rownames(visa.table) <- NULL
 
 # extract links
-visa.table <- lapply(VisaDoorSummary, function(x) x[["visa.table"]]) %>% unlist(recursive = FALSE) %>% do.call(rbind, .)
-rownames(visa.table) <- NULL
+visa.hlinks <- lapply(VisaDoorSummary, function(x) x[["visa.hlinks"]]) %>% unlist(recursive = FALSE)
 
 #######################
 # 
@@ -128,6 +127,7 @@ rownames(visa.table) <- NULL
 # INPUT 2: visa_hlinks = associated list of hyperlinks in visa.hlinks
 # OUTPUT: visa.table list with two additional columns for each year: employee.links = "Id" hyperlinks; employer.links = "Employer" hyperlinks
 add_hyperlinks <- function(visa_table, visa_hlinks){
+  visa_table <- data.table(visa_table) # convert to data.table
   id_first <- visa_table[1,"Id"]                   # find first Id on table, this will allow us to identify the index of the first item of the hyperlinks list that we are interested in
   id_last <- visa_table[nrow(visa_table),"Id"]     # find last Id on table, this will allow us to identify the index of the last item of the hyperlinks list that we are interested in
   # below: use regular expressions to identify the index of the hyperlinks that mention id_first and id_last
@@ -140,22 +140,35 @@ add_hyperlinks <- function(visa_table, visa_hlinks){
   return(data.table(visa_table, "Employee Hyperlinks" = employee_hlinks, "Employer Hyperlinks" = employer_links)) # bind each set of hyperlinks to original table
 }
 
-# create empty list to be filled with new expanded table
-visa.table.hlinks <- rep(list(NA), length(years))
-names(visa.table.hlinks) <- years
-
-# apply above function to each year
-for(j in 1:length(visa.table.hlinks)){
-  visa.table.hlinks[[j]] <- add_hyperlinks(visa_table = visa.table[[j]], visa_hlinks = visa.hlinks[[j]])
-  visa.table.hlinks[[j]] <- data.table(visa.table.hlinks[[j]], "Year" = years[j]) # add year as an additional column
+AddHyperlinks <- function(SummaryOutput){
+  visa.table <- SummaryOutput$visa.table
+  visa.hlinks <- SummaryOutput$visa.hlinks
+  # check which years have data
+  index_years <- !is.na(visa.table)
+  if(any(index_years)){ # if any of the years have data
+  # create empty list to be filled with new expanded table
+  visa.table.hlinks <- rep(list(NA), length(which(index_years == TRUE)))
+  names(visa.table.hlinks) <- names(visa.table[index_years])
+  # apply above function to each year
+  # loop version is good for debugging
+  #for(j in 1:length(visa.table.hlinks)){
+  #  visa.table.hlinks[[j]] <- add_hyperlinks(visa_table = visa.table[[j]], visa_hlinks = visa.hlinks[[j]])
+  #}
+  visa.table.hlinks <- lapply(names(visa.table.hlinks), function(x) add_hyperlinks(visa_table = visa.table[[x]], visa_hlinks = visa.hlinks[[x]]))
+  # bind yearly tables to create final table
+  visa.table.hlinks <- rbindlist(visa.table.hlinks)
+  return(visa.table.hlinks)}else{
+    return(NA)
+    }
 }
 
-# bind yearly tables to create final table
-visa.table.hlinks <- rbindlist(visa.table.hlinks)
+visa.table.hlinks.all <- lapply(1:length(countries), function(k) AddHyperlinks(VisaDoorSummary[[k]]))
+visa.table.hlinks.all <- do.call(rbind, visa.table.hlinks.all)
+
 
 # save data
-saveRDS(visa.table.hlinks, "VisaDoorOutputAll1.rds")
-write.csv(visa.table.hlinks, "VisaDoorOutputAll1.csv")
+saveRDS(visa.table.hlinks.all, "VisaDoorOutputAll1.rds")
+write.csv(visa.table.hlinks.all, "VisaDoorOutputAll1.csv")
 
 #######################
 # 
