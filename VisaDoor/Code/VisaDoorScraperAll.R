@@ -255,10 +255,9 @@ VisaDoorOutput2 <- na.omit(VisaDoorOutput2, cols =  c('Link to iCert Registry'))
 
 # create empty list to be filled with tables
 certification.table <- list()
-# loop over hyperlinks
-start_time <- proc.time() # measure run time
-for(i in 1:nrow(VisaDoorOutput2)){
-  url <- unname(unlist(VisaDoorOutput2[i,'Link to iCert Registry'])) # specify full url
+# apply to hyperlinks
+GetiCert <- function(applicant = NULL){ 
+  url <- unname(unlist(applicant[1,'Link to iCert Registry'])) # specify full url
   app.page <- url %>% read_html() # scrape url
   # extract text
   app.answer <- html_nodes(app.page,'#detail p') %>% html_text(.) %>% .[-102] # extract answers and delete row mismatch with questions
@@ -299,9 +298,20 @@ for(i in 1:nrow(VisaDoorOutput2)){
   question_order <- c("ETA Case Number", unname(unlist(app.comb[,"Question"]))) # store ordering of questions (spread changes ordering for some reason)
   app.comb <- spread(app.comb, Question, Answer) %>% setcolorder(.,question_order)
   # store
-  certification.table[[i]] <- app.comb # store individual entry
+  return(app.comb)
 }
-proc.time() - start_time
+
+# loop format for debugging
+#start_time <- Sys.time() # measure run time
+#certification.table <- list()
+#for(i in 1:nrow(VisaDoorOutput2)){
+#  certification.table[[i]] <- GetiCert(applicant = VisaDoorOutput2[i,])
+#}
+#Sys.time()  - start_time
+
+start_time <- Sys.time() # measure run time
+certification.table <- pblapply(1:nrow(VisaDoorOutput2), function(x) GetiCert(applicant = VisaDoorOutput2[x,]))
+Sys.time()  - start_time
 
 # bind data
 certification.table <- rbindlist(certification.table, fill = TRUE)
