@@ -12,7 +12,6 @@ library(dplyr)
 library(magrittr)
 library(tidyr)
 library(pbapply)
-library(htmltab)
 
 # set folder
 setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
@@ -140,6 +139,7 @@ add_hyperlinks <- function(visa_table, visa_hlinks){
   return(data.table(visa_table, "Employee Hyperlinks" = employee_hlinks, "Employer Hyperlinks" = employer_links)) # bind each set of hyperlinks to original table
 }
 
+# function extension to apply add_hyperlinks to a list of countries
 AddHyperlinks <- function(SummaryOutput){
   visa.table <- SummaryOutput$visa.table
   visa.hlinks <- SummaryOutput$visa.hlinks
@@ -165,7 +165,6 @@ AddHyperlinks <- function(SummaryOutput){
 visa.table.hlinks.all <- lapply(1:length(countries), function(k) AddHyperlinks(VisaDoorSummary[[k]]))
 visa.table.hlinks.all <- do.call(rbind, visa.table.hlinks.all)
 
-
 # save data
 saveRDS(visa.table.hlinks.all, "VisaDoorOutputAll1.rds")
 write.csv(visa.table.hlinks.all, "VisaDoorOutputAll1.csv")
@@ -187,6 +186,7 @@ rm(list = ls())
 
 # load data
 VisaDoorOutput1 <- readRDS("VisaDoorOutputAll1.rds")
+VisaDoorOutput1 <- VisaDoorOutput1[`Country of Origin` == "Venezuela",]
 # base url
 url_base <- "http://visadoor.com"
 # i-cert identifier
@@ -199,14 +199,18 @@ start_time <- proc.time() # measure run time
 # do the following for each observation in VisaDoorOutput1 (1 obs = 1 employee = 1 application)
 for(i in 1:nrow(VisaDoorOutput1)){
   url <- paste0(url_base, VisaDoorOutput1[i,"Employee Hyperlinks"]) # specify full url
-  temp <- data.table(readHTMLTable(url, header=T, which=1, stringsAsFactors=F))  # scrape table
-  temp <- temp[,ID:=colnames(temp)[2]]
-  setnames(temp, c("Variable", "Value", "Id")) # set column names
-  temp <- dcast(temp, Id ~ Variable, value.var = "Value") # convert to wide format
-  temphyper <- url %>% read_html() %>% html_nodes("a") %>% html_attr('href') # scrape hyperlink
-  if("Link to iCert Registry" %in% colnames(temp)){temp <- temp[, "Link to iCert Registry":=temphyper[grepl(identifier, temphyper)]]} # if a hyperlink exists, include in "Link to iCert Registry" column
-  application.table[[i]] <- temp # save individual data to list
-  rm(temp, temphyper) # clean up
+  page <- read_html(url)  # scrape html
+  table_check <- page %>% html_nodes("table") # is there are a table?
+  if(length(table_check) > 0){ # if TRUE
+    temp <- page %>% html_table(header = TRUE, trim = TRUE) %>% .[[1]] %>% data.table  # scrape table
+    temp <- temp[,ID:=colnames(temp)[2]]
+    setnames(temp, c("Variable", "Value", "Id")) # set column names
+    temp <- dcast(temp, Id ~ Variable, value.var = "Value") # convert to wide format
+    temphyper <- page %>% html_nodes("a") %>% html_attr('href') # scrape hyperlink
+    if("Link to iCert Registry" %in% colnames(temp)){temp <- temp[, "Link to iCert Registry":=temphyper[grepl(identifier, temphyper)]]} # if a hyperlink exists, include in "Link to iCert Registry" column
+    application.table[[i]] <- temp # save individual data to list
+    rm(temp, temphyper) # clean up
+  }
 }
 proc.time() - start_time
 
