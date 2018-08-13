@@ -194,11 +194,9 @@ identifier <- "https://icert.doleta.gov/"
 
 # create empty list to be filled with tables
 application.table <- list()
-# loop over Ids
-start_time <- proc.time() # measure run time
 # do the following for each observation in VisaDoorOutput1 (1 obs = 1 employee = 1 application)
-for(i in 1:nrow(VisaDoorOutput1)){
-  url <- paste0(url_base, VisaDoorOutput1[i,"Employee Hyperlinks"]) # specify full url
+GetEmployerInfo <- function(applicant = NULL){  
+  url <- paste0(url_base, applicant[1,"Employee Hyperlinks"]) # specify full url
   page <- read_html(url)  # scrape html
   table_check <- page %>% html_nodes("table") # is there are a table?
   if(length(table_check) > 0){ # if TRUE
@@ -208,12 +206,21 @@ for(i in 1:nrow(VisaDoorOutput1)){
     temp <- dcast(temp, Id ~ Variable, value.var = "Value") # convert to wide format
     temphyper <- page %>% html_nodes("a") %>% html_attr('href') # scrape hyperlink
     if("Link to iCert Registry" %in% colnames(temp)){temp <- temp[, "Link to iCert Registry":=temphyper[grepl(identifier, temphyper)]]} # if a hyperlink exists, include in "Link to iCert Registry" column
-    application.table[[i]] <- temp # save individual data to list
-    rm(temp, temphyper) # clean up
+    return(temp) # save individual data to list
   }
 }
-proc.time() - start_time
 
+#start_time <- Sys.time() # measure run time
+#application.table <- list()
+#for(i in 3167:nrow(VisaDoorOutput1)){  
+#  application.table[[i]] <- GetEmployerInfo(applicant = VisaDoorOutput1[i,])
+#}
+#Sys.time() - start_time
+
+# apply version
+#start_time <- Sys.time() # measure run time
+application.table <- pblapply(1:nrow(VisaDoorOutput1), function(x) GetEmployerInfo(applicant = VisaDoorOutput1[x,]))
+#Sys.time() - start_time
 # bind individual lists
 application.table <- rbindlist(application.table, fill = TRUE)
 # save data
