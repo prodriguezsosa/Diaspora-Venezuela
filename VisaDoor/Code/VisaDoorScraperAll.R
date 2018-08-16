@@ -12,6 +12,7 @@ library(dplyr)
 library(magrittr)
 library(tidyr)
 library(pbapply)
+library(progress)
 
 # set folder
 setwd("/Users/pedrorodriguez/Dropbox/Venezuela/DiasporaVenezuela/VisaDoor")
@@ -256,7 +257,7 @@ VisaDoorOutput2 <- na.omit(VisaDoorOutput2, cols =  c('Link to iCert Registry'))
 # create empty list to be filled with tables
 certification.table <- list()
 # apply to hyperlinks
-GetiCert <- function(applicant = NULL){ 
+GetiCert <- function(applicant = NULL, j){ 
   url <- unname(unlist(applicant[1,'Link to iCert Registry'])) # specify full url
   app.page <- url %>% read_html() # scrape url
   # extract text
@@ -293,7 +294,7 @@ GetiCert <- function(applicant = NULL){
   # replace empty answers with NA
   app.comb$Answer[app.comb$Answer==" "] <- NA 
   # convert from long to wide format
-  app.comb[,"ETA Case Number":=VisaDoorOutput2[i,"Id"]] # set Id variable
+  app.comb[,"ETA Case Number":=VisaDoorOutput2[j,"Id"]] # set Id variable
   app.comb <- app.comb[,c("ETA Case Number", "Question", "Answer")]
   question_order <- c("ETA Case Number", unname(unlist(app.comb[,"Question"]))) # store ordering of questions (spread changes ordering for some reason)
   app.comb <- spread(app.comb, Question, Answer) %>% setcolorder(.,question_order)
@@ -302,16 +303,19 @@ GetiCert <- function(applicant = NULL){
 }
 
 # loop format for debugging
-#start_time <- Sys.time() # measure run time
-#certification.table <- list()
-#for(i in 1:nrow(VisaDoorOutput2)){
-#  certification.table[[i]] <- GetiCert(applicant = VisaDoorOutput2[i,])
-#}
-#Sys.time()  - start_time
-
+pb <- progress_bar$new(total = nrow(VisaDoorOutput2))
 start_time <- Sys.time() # measure run time
-certification.table <- pblapply(1:nrow(VisaDoorOutput2), function(x) GetiCert(applicant = VisaDoorOutput2[x,]))
+certification.table <- list()
+for(i in 27:nrow(VisaDoorOutput2)){
+  certification.table[[i]] <- GetiCert(applicant = VisaDoorOutput2[i,], j = i)
+  pb$tick()
+}
 Sys.time()  - start_time
+
+# lapply does not seem to work in this case
+#start_time <- Sys.time() # measure run time
+#certification.table <- pblapply(1:nrow(VisaDoorOutput2), function(x) GetiCert(applicant = VisaDoorOutput2[x,], i = x))
+#Sys.time()  - start_time
 
 # bind data
 certification.table <- rbindlist(certification.table, fill = TRUE)
