@@ -1,0 +1,438 @@
+# Load packages ----
+library(shiny)
+library(plotly)
+library(wordcloud2)
+library(stringi)
+library(magrittr)
+
+# Load data ----
+VisaDoorGeoMaps <- readRDS("data/VisaDoorGeoMaps.rds")
+
+# Source helper functions -----
+source("geo_map_helper.R")
+source("wordcloud_helper.R")
+
+# Define UI for random distribution app ----
+ui <- fluidPage(
+  
+  # App title ----
+  titlePanel("Diaspora Venezuela"),
+  
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+    
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+      
+      # Input: Select the random distribution type ----
+      selectInput("occnarrow", 
+                  label = "Occupation:",
+                  choices = c("All Occupations",
+                  "Financial Managers",                                                                          
+                  "Architectural and Engineering Managers",                                                      
+                  "Marketing Managers",                                                                          
+                  "Management Analysts",                                                                         
+                  "Operations Research Analysts",                                                                
+                  "Accountants and Auditors",                                                                    
+                  "Lawyers",                                                                                     
+                  "Economists",                                                                                  
+                  "Mechanical Engineers",                                                                        
+                  "Elementary School Teachers, Except Special Education",                                        
+                  "Industrial Engineers",                                                                        
+                  "General and Operations Managers",                                                             
+                  "Financial Analysts",                                                                          
+                  "Computer and Information Systems Managers",                                                   
+                  "Sales Engineers",                                                                             
+                  "Chief Executives",                                                                            
+                  "Software Developers, Applications",                                                           
+                  "Electrical Engineers",                                                                        
+                  "Market Research Analysts and Marketing Specialists",                                          
+                  "Geoscientists, Except Hydrologists and Geographers",                                          
+                  "Sales Managers",                                                                              
+                  "Petroleum Engineers",                                                                         
+                  "Chemical Engineers",                                                                          
+                  "Civil Engineers",                                                                             
+                  "Computer Systems Analysts",                                                                   
+                  "Architects, Except Landscape and Naval",                                                      
+                  "Transportation, Storage, and Distribution Managers",                                          
+                  "Graphic Designers",                                                                           
+                  "Electronics Engineers, Except Computer",                                                      
+                  "Internists, General",                                                                         
+                  "Instructional Coordinators",                                                                  
+                  "Physicians and Surgeons, All Other",                                                          
+                  "Construction Managers",                                                                       
+                  "Materials Engineers",                                                                         
+                  "Logisticians",                                                                                
+                  "Purchasing Managers",                                                                         
+                  "Public Relations Specialists",                                                                
+                  "Advertising and Promotions Managers",                                                         
+                  "Secondary School Teachers, Except Special and Career/Technical Education",                    
+                  "Chefs and Head Cooks",                                                                        
+                  "Cost Estimators",                                                                             
+                  "Network and Computer Systems Administrators",                                                 
+                  "Bookkeeping, Accounting, and Auditing Clerks",                                                
+                  "Medical and Health Services Managers",                                                        
+                  "Health Specialties Teachers, Postsecondary",                                                  
+                  "Medical Scientists, Except Epidemiologists",                                                  
+                  "Cooks, Restaurant",                                                                           
+                  "Sales Representatives, Wholesale and Manufacturing, Technical and Scientific Products",       
+                  "Managers, All Other",                                                                         
+                  "Administrative Services Managers",                                                            
+                  "Executive Secretaries and Executive Administrative Assistants",                               
+                  "Industrial Production Managers",                                                              
+                  "Meat, Poultry, and Fish Cutters and Trimmers",                                                
+                  "Producers and Directors",                                                                     
+                  "Surgeons",                                                                                    
+                  "Commercial and Industrial Designers",                                                         
+                  "Software Developers, Systems Software",                                                       
+                  "Pediatricians, General",                                                                      
+                  "Preschool Teachers, Except Special Education",                                                
+                  "Personal Financial Advisors",                                                                 
+                  "Health and Safety Engineers, Except Mining Safety Engineers and Inspectors",                  
+                  "Childcare Workers",                                                                           
+                  "Training and Development Specialists",                                                        
+                  "Purchasing Agents, Except Wholesale, Retail, and Farm Products",                              
+                  "Architectural and Civil Drafters",                                                            
+                  "Editors",                                                                                     
+                  "Chemists",                                                                                    
+                  "Interpreters and Translators",                                                                
+                  "Dentists, General",                                                                           
+                  "Interior Designers",                                                                          
+                  "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive",             
+                  "Budget Analysts",                                                                             
+                  "Business Operations Specialists, All Other",                                                  
+                  "Engineering Teachers, Postsecondary",                                                         
+                  "Art Directors",                                                                               
+                  "Environmental Engineers",                                                                     
+                  "Business Teachers, Postsecondary",                                                            
+                  "Foreign Language and Literature Teachers, Postsecondary",                                     
+                  "Multimedia Artists and Animators",                                                            
+                  "First-Line Supervisors of Office and Administrative Support Workers",                         
+                  "Survey Researchers",                                                                          
+                  "Aircraft Mechanics and Service Technicians",                                                  
+                  "Mechanical Engineering Technicians",                                                          
+                  "Statisticians",                                                                               
+                  "Food Service Managers",                                                                       
+                  "Coaches and Scouts",                                                                          
+                  "Kindergarten Teachers, Except Special Education",                                             
+                  "Human Resources Managers",                                                                    
+                  "Paralegals and Legal Assistants",                                                             
+                  "Public Relations and Fundraising Managers",                                                   
+                  "First-Line Supervisors of Mechanics, Installers, and Repairers",                              
+                  "Securities, Commodities, and Financial Services Sales Agents",                                
+                  "Computer User Support Specialists",                                                           
+                  "Family and General Practitioners",                                                            
+                  "Financial Specialists, All Other",                                                            
+                  "Human Resources Specialists",                                                                 
+                  "Food Scientists and Technologists",                                                           
+                  "Computer Occupations, All Other",                                                             
+                  "Electrical and Electronics Engineering Technicians",                                          
+                  "Computer Network Architects",                                                                 
+                  "Computer Science Teachers, Postsecondary",                                                    
+                  "Animal Scientists",                                                                           
+                  "Audio-Visual and Multimedia Collections Specialists",                                         
+                  "Industrial-Organizational Psychologists",                                                     
+                  "Maids and Housekeeping Cleaners",                                                             
+                  "Middle School Teachers, Except Special and Career/Technical Education",                       
+                  "Orthodontists",                                                                               
+                  "Aerospace Engineers",                                                                         
+                  "First-Line Supervisors of Personal Service Workers",                                          
+                  "Cooks, Private Household",                                                                    
+                  "Sales Representatives, Wholesale and Manufacturing, Except Technical and Scientific Products",
+                  "Prosthodontists",                                                                             
+                  "Occupational Therapists",                                                                     
+                  "Advertising Sales Agents",                                                                    
+                  "First-Line Supervisors of Housekeeping and Janitorial Workers",                               
+                  "Obstetricians and Gynecologists",                                                             
+                  "Health Educators",                                                                            
+                  "Computer and Information Research Scientists",                                                
+                  "Biomedical Engineers",                                                                        
+                  "Education Administrators, Elementary and Secondary School",                                   
+                  "Writers and Authors",                                                                         
+                  "Hairdressers, Hairstylists, and Cosmetologists",                                              
+                  "Psychiatrists",                                                                               
+                  "Veterinarians",                                                                               
+                  "Education Administrators, Postsecondary",                                                     
+                  "Biochemists and Biophysicists",                                                               
+                  "Medical Equipment Repairers",                                                                 
+                  "First-Line Supervisors of Production and Operating Workers",                                  
+                  "Buyers and Purchasing Agents, Farm Products",                                                 
+                  "Database Administrators",                                                                     
+                  "Social and Community Service Managers",                                                       
+                  "Marine Engineers and Naval Architects",                                                       
+                  "Credit Analysts",                                                                             
+                  "Computer Hardware Engineers",                                                                 
+                  "Billing and Posting Clerks",                                                                  
+                  "Art, Drama, and Music Teachers, Postsecondary",                                               
+                  "Education Administrators, Preschool and Childcare Center/Program",                            
+                  "Training and Development Managers",                                                           
+                  "Film and Video Editors",                                                                      
+                  "Chemistry Teachers, Postsecondary",                                                           
+                  "Dentists, All Other Specialists",                                                             
+                  "Arbitrators, Mediators, and Conciliators",                                                    
+                  "Technical Writers",                                                                           
+                  "Transportation Inspectors",                                                                   
+                  "Carpenters",                                                                                  
+                  "Bakers",                                                                                      
+                  "Natural Sciences Managers",                                                                   
+                  "Engineers, All Other",                                                                        
+                  "Insurance Underwriters",                                                                      
+                  "Agricultural Engineers",                                                                      
+                  "Industrial Engineering Technicians",                                                          
+                  "Compliance Officers",                                                                         
+                  "Educational, Guidance, School, and Vocational Counselors",                                    
+                  "Education Teachers, Postsecondary",                                                           
+                  "First-Line Supervisors of Non-Retail Sales Workers",                                          
+                  "Anesthesiologists",                                                                           
+                  "Communications Teachers, Postsecondary",                                                      
+                  "English Language and Literature Teachers, Postsecondary",                                     
+                  "First-Line Supervisors of Construction Trades and Extraction Workers",                        
+                  "Architecture Teachers, Postsecondary",                                                        
+                  "Janitors and Cleaners, Except Maids and Housekeeping Cleaners",                               
+                  "Medical and Clinical Laboratory Technologists",                                               
+                  "Farm and Home Management Advisors",                                                           
+                  "Audio and Video Equipment Technicians",                                                       
+                  "Occupational Health and Safety Specialists",                                                  
+                  "Animal Trainers",                                                                             
+                  "Customer Service Representatives",                                                            
+                  "Curators",                                                                                    
+                  "Automotive Service Technicians and Mechanics",                                                
+                  "Education, Training, and Library Workers, All Other",                                         
+                  "Meeting, Convention, and Event Planners",                                                     
+                  "Property, Real Estate, and Community Association Managers",                                   
+                  "Web Developers",                                                                              
+                  "Information Security Analysts",                                                               
+                  "Financial Examiners",                                                                         
+                  "Loan Officers",                                                                               
+                  "Fine Artists, Including Painters, Sculptors, and Illustrators",                               
+                  "Stock Clerks and Order Fillers",                                                              
+                  "Economics Teachers, Postsecondary",                                                           
+                  "Home Health Aides",                                                                           
+                  "Personal Care Aides",                                                                         
+                  "Travel Agents",                                                                               
+                  "Landscaping and Groundskeeping Workers",                                                      
+                  "Reporters and Correspondents",                                                                
+                  "Environmental Scientists and Specialists, Including Health",                                  
+                  "Physics Teachers, Postsecondary",                                                             
+                  "Music Directors and Composers",                                                               
+                  "Fashion Designers",                                                                           
+                  "Oral and Maxillofacial Surgeons",                                                             
+                  "First-Line Supervisors of Retail Sales Workers",                                              
+                  "Health Technologists and Technicians, All Other",                                             
+                  "Directors, Religious Activities and Education",                                               
+                  "Nonfarm Animal Caretakers",                                                                   
+                  "Materials Scientists",                                                                        
+                  "Pharmacists",                                                                                 
+                  "Captains, Mates, and Pilots of Water Vessels",                                                
+                  "Packers and Packagers, Hand",                                                                 
+                  "Loan Interviewers and Clerks",                                                                
+                  "Cement Masons and Concrete Finishers",                                                        
+                  "Licensed Practical and Licensed Vocational Nurses",                                           
+                  "Computer Programmers",                                                                        
+                  "Wholesale and Retail Buyers, Except Farm Products",                                           
+                  "Drafters, All Other",                                                                         
+                  "Claims Adjusters, Examiners, and Investigators",                                              
+                  "Computer Network Support Specialists",                                                        
+                  "Mathematicians",                                                                              
+                  "Demonstrators and Product Promoters",                                                         
+                  "Environmental Engineering Technicians",                                                       
+                  "Psychology Teachers, Postsecondary",                                                          
+                  "Atmospheric, Earth, Marine, and Space Sciences Teachers, Postsecondary",                      
+                  "Airfield Operations Specialists",                                                             
+                  "Insurance Sales Agents",                                                                      
+                  "Farmers, Ranchers, and Other Agricultural Managers",                                          
+                  "Diagnostic Medical Sonographers",                                                             
+                  "Sales and Related Workers, All Other",                                                        
+                  "Soil and Plant Scientists",                                                                   
+                  "Biological Scientists, All Other",                                                            
+                  "Religious Workers, All Other",                                                                
+                  "Biological Science Teachers, Postsecondary",                                                  
+                  "Welders, Cutters, Solderers, and Brazers",                                                    
+                  "Airline Pilots, Copilots, and Flight Engineers",                                              
+                  "Commercial Pilots",                                                                           
+                  "Food Preparation Workers",                                                                    
+                  "Sound Engineering Technicians",                                                               
+                  "Physician Assistants",                                                                        
+                  "Mathematical Science Teachers, Postsecondary",                                                
+                  "Agricultural Sciences Teachers, Postsecondary",                                               
+                  "Agents and Business Managers of Artists, Performers, and Athletes",                           
+                  "Compensation and Benefits Managers",                                                          
+                  "Agricultural and Food Science Technicians",                                                   
+                  "Set and Exhibit Designers",                                                                   
+                  "Legal Support Workers, All Other",                                                            
+                  "Health Diagnosing and Treating Practitioners, All Other",                                     
+                  "Retail Salespersons",                                                                         
+                  "Combined Food Preparation and Serving Workers, Including Fast Food",                          
+                  "Sociology Teachers, Postsecondary",                                                           
+                  "Jewelers and Precious Stone and Metal Workers",                                               
+                  "Geological and Petroleum Technicians",                                                        
+                  "Model Makers, Metal and Plastic",                                                             
+                  "Molders, Shapers, and Casters, Except Metal and Plastic",                                     
+                  "Dietitians and Nutritionists",                                                                
+                  "Receptionists and Information Clerks",                                                        
+                  "Production, Planning, and Expediting Clerks",                                                 
+                  "Inspectors, Testers, Sorters, Samplers, and Weighers",                                        
+                  "Maintenance and Repair Workers, General",                                                     
+                  "Social Science Research Assistants",                                                          
+                  "Social Sciences Teachers, Postsecondary, All Other",                                          
+                  "Shipping, Receiving, and Traffic Clerks",                                                     
+                  "Cargo and Freight Agents",                                                                    
+                  "First-Line Supervisors of Farming, Fishing, and Forestry Workers",                            
+                  "Dispatchers, Except Police, Fire, and Ambulance",                                             
+                  "Assemblers and Fabricators, All Other",                                                       
+                  "Athletes and Sports Competitors",                                                             
+                  "Clergy",                                                                                      
+                  "Marriage and Family Therapists",                                                              
+                  "Criminal Justice and Law Enforcement Teachers, Postsecondary",                                
+                  "Mining and Geological Engineers, Including Mining Safety Engineers",                          
+                  "Tax Examiners and Collectors, and Revenue Agents",                                            
+                  "Computer Support Specialists",                                                                
+                  "Tax Preparers",                                                                               
+                  "Electro-Mechanical Technicians",                                                              
+                  "Landscape Architects",                                                                        
+                  "Surveyors",                                                                                   
+                  "Civil Engineering Technicians",                                                               
+                  "Legal Secretaries",                                                                           
+                  "Political Scientists",                                                                        
+                  "Radiologic Technologists",                                                                    
+                  "Helpers--Production Workers",                                                                 
+                  "Mechanical Drafters",                                                                         
+                  "Physicists",                                                                                  
+                  "Medical Appliance Technicians",                                                               
+                  "First-Line Supervisors of Landscaping, Lawn Service, and Groundskeeping Workers",             
+                  "Postsecondary Teachers, All Other",                                                           
+                  "Media and Communication Workers, All Other",                                                  
+                  "Psychiatric Aides",                                                                           
+                  "Physical Therapists",                                                                         
+                  "Concierges",                                                                                  
+                  "Real Estate Brokers",                                                                         
+                  "First-Line Supervisors of Food Preparation and Serving Workers",                              
+                  "Zoologists and Wildlife Biologists",                                                          
+                  "Actors",                                                                                      
+                  "Occupational Therapy Assistants",                                                             
+                  "Audiologists",                                                                                
+                  "Veterinary Technologists and Technicians",                                                    
+                  "Lodging Managers",                                                                            
+                  "Dental Assistants",                                                                           
+                  "Dental Hygienists",                                                                           
+                  "Biological Technicians",                                                                      
+                  "Appraisers and Assessors of Real Estate",                                                     
+                  "Sociologists",                                                                                
+                  "Barbers",                                                                                     
+                  "Real Estate Sales Agents",                                                                    
+                  "Healthcare Social Workers",                                                                   
+                  "Exercise Physiologists",                                                                      
+                  "Special Education Teachers, Preschool",                                                       
+                  "Veterinary Assistants and Laboratory Animal Caretakers",                                      
+                  "Photographers",                                                                               
+                  "Hazardous Materials Removal Workers",                                                         
+                  "Office Clerks, General",                                                                      
+                  "Payroll and Timekeeping Clerks",                                                              
+                  "Physical Scientists, All Other",                                                              
+                  "Heavy and Tractor-Trailer Truck Drivers",                                                     
+                  "Roofers",                                                                                     
+                  "Order Clerks",                                                                                
+                  "Stonemasons",                                                                                 
+                  "Social Workers, All Other",                                                                   
+                  "Tailors, Dressmakers, and Custom Sewers",                                                     
+                  "First-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators",  
+                  "Plasterers and Stucco Masons",                                                                
+                  "Electrical and Electronics Repairers, Commercial and Industrial Equipment",                   
+                  "Farmworkers and Laborers, Crop, Nursery, and Greenhouse",                                     
+                  "Camera Operators, Television, Video, and Motion Picture",                                     
+                  "Title Examiners, Abstractors, and Searchers",                                                 
+                  "Dental Laboratory Technicians",                                                               
+                  "Bus and Truck Mechanics and Diesel Engine Specialists",                                       
+                  "Heating, Air Conditioning, and Refrigeration Mechanics and Installers",                       
+                  "Prepress Technicians and Workers",                                                            
+                  "Telecommunications Line Installers and Repairers",                                            
+                  "Upholsterers",                                                                                
+                  "Helpers--Electricians",                                                                       
+                  "Rotary Drill Operators, Oil and Gas",                                                         
+                  "Clinical, Counseling, and School Psychologists",                                              
+                  "Laborers and Freight, Stock, and Material Movers, Hand",                                      
+                  "Procurement Clerks",                                                                          
+                  "Helpers--Pipelayers, Plumbers, Pipefitters, and Steamfitters",                                
+                  "Hydrologists",                                                                                
+                  "Chemical Technicians",                                                                        
+                  "First-Line Supervisors of Helpers, Laborers, and Material Movers, Hand",                      
+                  "Industrial Machinery Mechanics",                                                              
+                  "Cabinetmakers and Bench Carpenters",                                                          
+                  "Residential Advisors",                                                                        
+                  "Child, Family, and School Social Workers",                                                    
+                  "Life, Physical, and Social Science Technicians, All Other",                                   
+                  "Librarians",                                                                                  
+                  "Medical Transcriptionists",                                                                   
+                  "Substance Abuse and Behavioral Disorder Counselors",                                          
+                  "Community and Social Service Specialists, All Other",                                         
+                  "First-Line Supervisors of Protective Service Workers, All Other"),
+                  selected = "All Occupations"),
+      
+      # br() element to introduce extra vertical spacing ----
+      #br(),
+      
+      img(src = "cruz-diez.jpg", height = 100, width = 320),
+      
+      p("Data Source: ",
+        a("VisaDoor", 
+          href = "http://visadoor.com"))
+      
+    ),
+    
+    # Main panel for displaying outputs ----
+    mainPanel(
+      
+      # Output: Tabset w/ plot, summary, and table ----
+      tabsetPanel(type = "tabs",
+                  tabPanel("Map", plotlyOutput("map")),
+                  tabPanel("Employers", wordcloud2Output("wordcloud")),
+                  tabPanel("Table", DT::dataTableOutput("table"))
+      )
+      
+    )
+  )
+)
+
+# Server logic ----
+server <- function(input, output) {
+  
+  df_subset1 <- reactive({
+    if(input$occnarrow == "All Occupations"){a <- VisaDoorGeoMaps}else{ 
+    a <- subset(VisaDoorGeoMaps, `Occupation Narrow` == input$occnarrow)
+    }
+    return(a)
+  })
+  
+  df_subset2 <- reactive({
+    if(input$occnarrow == "All Occupations"){b <- VisaDoorGeoMaps[,-c("Latitude", "Longitude", "hover")]}else{
+    b <- subset(VisaDoorGeoMaps, `Occupation Narrow` == input$occnarrow)
+    b <- b[,-c("Latitude", "Longitude", "hover")]
+    }
+    return(b)
+  })
+  
+    # plot map
+  output$map <- renderPlotly({
+    a <- input$occnarrow
+    geo_map(df_subset1())
+  })
+  
+  # plot wordcloud
+  output$wordcloud <- renderWordcloud2({
+    plot_wordcloud(df_subset1(), 1)
+  })
+
+  output$table <- DT::renderDataTable({
+    b <- input$occnarrow
+    DT::datatable(
+      df_subset2(), options = list(
+        lengthMenu = list(c(5, 15, -1), c('5', '15', 'All')),
+        pageLength = 15
+      )
+    )
+  })
+  
+}
+
+# Create Shiny app ----
+shinyApp(ui, server)
